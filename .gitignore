@@ -12,3 +12,4 @@ env/
 
 # Mac system files (optional, but handy)
 .DS_Store
+docker-compose.yml
