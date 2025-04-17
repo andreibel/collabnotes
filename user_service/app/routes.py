@@ -42,3 +42,20 @@ async def register_user(user_in: schemas.UserCreate):
         await session.refresh(new_user)
 
         return new_user
+    
+
+@router.post('/login', response_model=schemas.TokenResponse)
+async def login(user_in:schemas.UserLogin):
+    async with database.SessionLocal() as session:
+        print("Login request received:", user_in.username)
+        result = await session.execute(
+            select(models.User).where(models.User.username == user_in.username)
+        )
+        user: models.User = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+        if not auth.verify_password(user_in.password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+        access_token = auth.create_access_token({"sub":str(user.id)})
+        return schemas.TokenResponse(access_token=access_token)
+    
