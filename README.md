@@ -1,0 +1,1 @@
+for runing in containders and k8s or docker-compose better to remove the dotenv 

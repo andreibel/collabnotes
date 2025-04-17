@@ -1,5 +1,5 @@
 # user_service/Dockerfile
-FROM python:latest
+FROM python:3.11-slim
 
 # Set environment variables to ensure Python writes straight to stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1

@@ -1,0 +1,11 @@
+motor
+fastapi
+uvicorn[standard]
+asyncpg
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+dotenv
+pydantic[email]
+greenlet
+pymongo

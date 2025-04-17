@@ -53,9 +53,9 @@ async def login(user_in:schemas.UserLogin):
         )
         user: models.User = result.scalar_one_or_none()
         if not user:
-            raise HTTPException(status_code=400, detail="Invalid credentials")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials")
         if not auth.verify_password(user_in.password, user.hashed_password):
-            raise HTTPException(status_code=400, detail="Invalid credentials")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials")
         access_token = auth.create_access_token({"sub":str(user.id)})
         return schemas.TokenResponse(access_token=access_token)
     
