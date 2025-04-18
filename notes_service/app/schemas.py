@@ -20,3 +20,21 @@ class NoteOut(BaseModel):
     user_id: str
     shared_with: Optional[List[SharedUser]] = []
     created_at: datetime
+
+class NoteSummary(BaseModel):
+    id: str = Field(..., alias="_id")
+    title: str
+    tags: List[str] = []
+    created_at: datetime
+    
+    
+class NoteFullUpdate(BaseModel):
+    title: str
+    content: str
+    tags: List[str] = []
+    
+class NoteUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    tags: Optional[List[str]] = None
+    
