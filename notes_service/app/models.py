@@ -63,6 +63,7 @@ async def put_note(note_id:str, note:dict) -> dict | None:
     except:
         return None
     new_note = await db["notes"].find_one_and_replace({"_id":obj_id}, note, return_document=True)
+    print(new_note)
     if new_note:
         new_note["_id"] = str(new_note["_id"])
     return new_note

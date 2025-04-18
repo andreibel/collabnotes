@@ -5,7 +5,7 @@ from typing import List
 
 router = APIRouter()
 
-@router.post('/create', response_model=schemas.NoteOut, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=schemas.NoteOut, status_code=status.HTTP_201_CREATED)
 async def crete_note(note_in:schemas.NoteCreate,current_user_id: str = Depends(auth.get_current_user)):
     note_data = note_in.dict()
     note_data["user_id"] =  current_user_id
@@ -18,23 +18,22 @@ async def crete_note(note_in:schemas.NoteCreate,current_user_id: str = Depends(a
 
 @router.get('/{note_id}',response_model=schemas.NoteOut,status_code=status.HTTP_200_OK)
 async def get_note(note_id:str, current_user_id: str = Depends(auth.get_current_user)):
-    note:dict = models.get_note_by_id(note_id)
+    note =  await models.get_note_by_id(note_id)
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Note not found")
-    
-    
     if note["user_id"] != current_user_id and not any(
         shered["user_id"] == current_user_id for shered in note.get("shared_with", [])):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="access denide!!!")
     
     return note 
         
-@router.post("/",response_model=List[schemas.NoteSummary],status_code=status.HTTP_200_OK)
+@router.get("/",response_model=List[schemas.NoteSummary],status_code=status.HTTP_200_OK)
 async def get_my_notes(current_user_id: str = Depends(auth.get_current_user)):
-    return models.list_notes(current_user_id)
+    res = await models.list_notes(current_user_id)
+    return res
 
 
-@router.post("/shared",response_model=List[schemas.NoteSummary],status_code=status.HTTP_200_OK)
+@router.get("/shared",response_model=List[schemas.NoteSummary],status_code=status.HTTP_200_OK)
 async def get_shared_notes(current_user_id: str = Depends(auth.get_current_user)):
     return models.list_share_notes(current_user_id)
 
@@ -78,9 +77,12 @@ async def repalace_note(
     to_replace = note_replace.dict()
     to_replace["user_id"] = note["user_id"]
     to_replace["shared_with"] = note.get("shared_with", []) 
-    res = models.put_note(note_id,to_replace)
+    to_replace["created_at"] = note["created_at"]
+    print("\n\n\n\n",to_replace,"\n\n\n\n")
+    res =  await models.put_note(note_id,to_replace)
     if not res:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to replace note")
+    return res
 
 @router.delete("/{note_id}",status_code=status.HTTP_204_NO_CONTENT)
 async def delete_note(
