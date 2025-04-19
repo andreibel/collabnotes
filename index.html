@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CollabNotes – Minimal Front‑End</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    input, textarea, button { margin-top: .5rem; display: block; }
+    #notes li { margin: .4rem 0; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <h1>CollabNotes (vanilla JS demo)</h1>
+
+  <!-- Login form -->
+  <div id="login-area">
+    <h2>Login</h2>
+    <label>Username <input id="username" /></label>
+    <label>Password <input id="password" type="password" /></label>
+    <button id="login-btn">Login</button>
+    <p id="login-error" style="color:red;"></p>
+  </div>
+
+  <!-- Main app -->
+  <div id="app-area" class="hidden">
+    <h2>My Notes</h2>
+    <ul id="notes"></ul>
+
+    <h3>Create Note</h3>
+    <label>Title <input id="new-title" /></label>
+    <label>Content <textarea id="new-content" rows="4"></textarea></label>
+    <button id="create-btn">Create</button>
+  </div>
+
+  <script>
+    // ====== Config ======
+    const USER_API  = 'http://localhost:8000/api';
+    const NOTES_API = 'http://localhost:8001/notes';
+
+    // ====== Elements ======
+    const loginArea  = document.getElementById('login-area');
+    const appArea    = document.getElementById('app-area');
+
+    const usernameIn = document.getElementById('username');
+    const passwordIn = document.getElementById('password');
+    const loginBtn   = document.getElementById('login-btn');
+    const loginErr   = document.getElementById('login-error');
+
+    const notesUl    = document.getElementById('notes');
+    const newTitleIn = document.getElementById('new-title');
+    const newContentIn = document.getElementById('new-content');
+    const createBtn  = document.getElementById('create-btn');
+
+    let token = localStorage.getItem('token');
+
+    // ====== Helper ======
+    function authHeaders() {
+      return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+    }
+
+    // ====== API calls ======
+    async function login(username, password) {
+      const res = await fetch(`${USER_API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (!res.ok) throw new Error('Login failed');
+      return (await res.json()).access_token;
+    }
+
+    async function fetchNotes() {
+      const res = await fetch(NOTES_API, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Fetch notes failed');
+      return await res.json();
+    }
+
+    async function createNote(title, content) {
+      const res = await fetch(NOTES_API, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ title, content, tags: [] })
+      });
+      if (!res.ok) throw new Error('Create note failed');
+      return await res.json();
+    }
+
+    async function deleteNote(id) {
+      await fetch(`${NOTES_API}/${id}`, { method: 'DELETE', headers: authHeaders() });
+    }
+
+    // ====== UI actions ======
+    loginBtn.onclick = async () => {
+      try {
+        const t = await login(usernameIn.value, passwordIn.value);
+        token = t;
+        localStorage.setItem('token', token);
+        loginArea.classList.add('hidden');
+        appArea.classList.remove('hidden');
+        loadNotes();
+      } catch (err) {
+        loginErr.textContent = err.message;
+      }
+    };
+
+    createBtn.onclick = async () => {
+      try {
+        await createNote(newTitleIn.value, newContentIn.value);
+        newTitleIn.value = newContentIn.value = '';
+        loadNotes();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    async function loadNotes() {
+      notesUl.innerHTML = '<li>Loading…</li>';
+      try {
+        const notes = await fetchNotes();
+        notesUl.innerHTML = '';
+        notes.forEach(n => {
+          const li = document.createElement('li');
+          li.textContent = n.title;
+          const del = document.createElement('button');
+          del.textContent = 'Delete';
+          del.style.marginLeft = '10px';
+          del.onclick = async () => { await deleteNote(n._id); loadNotes(); };
+          li.appendChild(del);
+          notesUl.appendChild(li);
+        });
+      } catch (err) {
+        notesUl.innerHTML = `<li style="color:red;">${err.message}</li>`;
+      }
+    }
+
+    // Auto‑login if token already in localStorage
+    if (token) {
+      loginArea.classList.add('hidden');
+      appArea.classList.remove('hidden');
+      loadNotes();
+    }
+  </script>
+</body>
+</html>
