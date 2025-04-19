@@ -1,3 +1,4 @@
+#modles note app
 from app.database import db
 from datetime import datetime
 from bson import ObjectId
@@ -69,7 +70,7 @@ async def put_note(note_id:str, note:dict) -> dict | None:
     return new_note
 
 
-async def delete_note(note_id: str) -> bool:
+async def del_note(note_id: str) -> bool:
     try:
         obj_id = ObjectId(note_id)
     except:
